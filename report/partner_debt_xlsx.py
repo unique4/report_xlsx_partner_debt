@@ -14,12 +14,12 @@ class PartnerDebtXlsx(models.AbstractModel):
 #        sos = env['sale.report'].search([('confirmation_date','>',data['form']['start_date']),('date_invoice','<',data['form']['end_date']),
 #            ('partner_id.id','=',data['form']['partner'][0])])
         order_template = {
-            'so_code': {
+            'order_name': {
                 'header': {
-                    'value': 'Code',
+                    'value': 'Order',
                 },
                 'data': {
-                    'value': self._render("so.name"),
+                    'value': self._render("order_name"),
 #self._render("data['form']['partner'].name"),
                 },
                 'width': 20,
@@ -29,7 +29,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                     'value': 'Product',
                 },
                 'data': {
-                    'value': self._render("so.product_id.name"),
+                    'value': self._render("line.product_id.name"),
                 },
                 'width': 20,
             },
@@ -38,7 +38,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                     'value': 'Quantity',
                 },
                 'data': {
-                    'value': self._render("so.product_uom_qty"),
+                    'value': self._render("line.product_uom_qty"),
                 },
                 'width': 10,
             },
@@ -47,7 +47,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                     'value': 'Price Unit',
                 },
                 'data': {
-                    'value': self._render("so.product_id.lst_price"),
+                    'value': self._render("line.product_id.lst_price"),
                 },
                 'width': 10,
             },
@@ -71,11 +71,16 @@ class PartnerDebtXlsx(models.AbstractModel):
                 },
                 'width': 15,
             },
+            'blank': {
+                'data': {
+                    'value': None,
+                },
+            },
         }
 
 
         order_wl = [
-            'so_code','product','quantity','price_unit','subtotal','total']
+            'order_name','product','quantity','price_unit','subtotal','total']
         order_params = {
             'ws_name': 'Sale Order',
             'generate_ws_method': '_sale_report',
@@ -139,7 +144,6 @@ class PartnerDebtXlsx(models.AbstractModel):
         self._set_column_width(ws, payment_params)
 
         row_pos = 0
-        payment_params['title'] = data['form']['partner'][1]
         row_pos = self._write_ws_title(ws, row_pos, payment_params)
 
     def _purchase_report(self, wb, ws, purchase_params, data, acd):
@@ -152,13 +156,12 @@ class PartnerDebtXlsx(models.AbstractModel):
         self._set_column_width(ws, purchase_params)
 
         row_pos = 0
-        purchase_params['title'] = data['form']['partner'][1]
         row_pos = self._write_ws_title(ws, row_pos, purchase_params)
 
     def _sale_report(self, wb, ws, order_params, data, acd):
 
 #        partner = env['res.partner'].browse(data['form']['partner'][0])
-        sos = self.env['sale.report'].search([('confirmation_date','>',data['form']['start_date']),('confirmation_date','<',data['form']['end_date']),
+        orders = self.env['sale.order'].search([('confirmation_date','>=',data['form']['start_date']),('confirmation_date','<=',data['form']['end_date']),
             ('partner_id.id','=',data['form']['partner'][0])])
 
         ws.set_portrait()
@@ -169,7 +172,6 @@ class PartnerDebtXlsx(models.AbstractModel):
         self._set_column_width(ws, order_params)
 
         row_pos = 0
-        order_params['title'] = data['form']['partner'][1]
         row_pos = self._write_ws_title(ws, row_pos, order_params)
         row_pos = self._write_line(
             ws, row_pos, order_params, col_specs_section='header',
@@ -177,20 +179,45 @@ class PartnerDebtXlsx(models.AbstractModel):
         ws.freeze_panes(row_pos, 0)
 
         wl = order_params['wanted_list']
-        for so in sos:
-            qty_cell = self._rowcol_to_cell(row_pos, wl.index('quantity'))
-            price_cell = self._rowcol_to_cell(row_pos, wl.index('price_unit'))
-            subtotal_formula = '{}*{}'.format(qty_cell,price_cell)
 
-            total_formula = 'on_prog'
-            row_pos = self._write_line(
-                ws, row_pos, order_params, col_specs_section='data',
-                render_space={
-                    'so': so,
-                    'subtotal_formula': subtotal_formula,
-                    'total_formula': total_formula,
-                },
-                default_format=self.format_tcell_left)
+        totalwl = ['blank']*5+['total']
+        blinewl = ['blank','product','quantity','price_unit','subtotal','blank']
+        trow_pos = row_pos
+        row_pos += 1
+        for order in orders:
+            orow_pos = row_pos
+            for line in order.order_line:
+                qty_cell = self._rowcol_to_cell(row_pos, wl.index('quantity'))
+                price_cell = self._rowcol_to_cell(row_pos, wl.index('price_unit'))
+                subtotal_formula = '{}*{}'.format(qty_cell,price_cell)
+                if row_pos == orow_pos:
+                    order_params['wanted_list'] = wl
+                    order_name = order.name
+                    flinesub_cell = self._rowcol_to_cell(orow_pos, wl.index('subtotal'))
+                    llinesub_cell = self._rowcol_to_cell(orow_pos+len(order.order_line)-1, wl.index('subtotal'))
+                    total_formula = 'SUM({}:{})'.format(flinesub_cell,llinesub_cell)
+                else:
+                    order_params['wanted_list'] = blinewl
+                    order_name = None
+                row_pos = self._write_line(
+                    ws, row_pos, order_params, col_specs_section='data',
+                    render_space={
+                        'order_name': order_name,
+                        'line': line,
+                        'subtotal_formula': subtotal_formula,
+                        'total_formula': total_formula,
+                    },
+                    default_format=self.format_tcell_left)
+        ftotal_cell = self._rowcol_to_cell(trow_pos+1, wl.index('total'))
+        ltotal_cell = self._rowcol_to_cell(row_pos-1, wl.index('total'))
+        order_params['wanted_list'] = totalwl
+        total_formula = 'SUM({}:{})'.format(ftotal_cell,ltotal_cell)
+        self._write_line(
+            ws, trow_pos, order_params, col_specs_section='data',
+                    render_space={
+                        'total_formula': total_formula,
+                    },
+                    default_format=self.format_tcell_left)
 #    def _partner_report(self, workbook, ws, ws_params, data, acd):
 
 #        ws.set_portrait()
