@@ -63,7 +63,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                     'value': 'Price Unit',
                 },
                 'data': {
-                    'value': self._render("line.product_id.lst_price"),
+                    'value': self._render("line.price_unit"),
                     'format': self.format_accounting_numb,
                 },
                 'width': 10,
