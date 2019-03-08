@@ -13,3 +13,9 @@ from odoo import models, fields, api
 #     @api.depends('value')
 #     def _value_pc(self):
 #         self.value2 = float(self.value) / 100
+
+class report_xlsx_partner_debt(models.Model):
+    _name = 'account.payment'
+    _inherit = 'account.payment'
+
+    previous_period = fields.Boolean(string="Previous Period Payment",default=False)

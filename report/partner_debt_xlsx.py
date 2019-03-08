@@ -9,6 +9,22 @@ class PartnerDebtXlsx(models.AbstractModel):
     _name = 'report.report_xlsx_partner_debt.partner_debt_xlsx'
     _inherit = 'report.report_xlsx.abstract'
 
+    def _define_formats(self, workbook):
+        super()._define_formats(workbook)
+        self.format_accounting_numb = workbook.add_format({
+            'align': 'right',
+            'num_format': '_-* #,##0 [$₫-vi-VN]_-;-* #,##0 [$₫-vi-VN]_-;_-* "-" [$₫-vi-VN]_-;_-@_-'
+        })
+        bg_yellow = '#FFFFCC'
+        bg_grey = '#D3D3D3'
+        self.format_accounting_fnumb = workbook.add_format({
+            'align': 'right',
+            'num_format': '_-* #,##0 [$₫-vi-VN]_-;-* #,##0 [$₫-vi-VN]_-;_-* "-" [$₫-vi-VN]_-;_-@_-',
+            'bold': True,
+            'font_size': 12,
+            'bg_color': bg_yellow,
+        })
+        self.format_none_cell = workbook.add_format({'bg_color': bg_grey})
     def _get_ws_params(self, wb, data, acd):
 #        partner = env['res.partner'].browse(data['form']['partner'][0])
 #        sos = env['sale.report'].search([('confirmation_date','>',data['form']['start_date']),('date_invoice','<',data['form']['end_date']),
@@ -48,6 +64,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                 },
                 'data': {
                     'value': self._render("line.product_id.lst_price"),
+                    'format': self.format_accounting_numb,
                 },
                 'width': 10,
             },
@@ -58,6 +75,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                 'data': {
                     'type': 'formula',
                     'value': self._render("subtotal_formula"),
+                    'format': self.format_accounting_numb,
                 },
                 'width': 15,
             },
@@ -68,6 +86,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                 'data': {
                     'type': 'formula',
                     'value': self._render("total_formula"),
+                    'format': self.format_accounting_numb,
                 },
                 'width': 15,
             },
@@ -88,26 +107,141 @@ class PartnerDebtXlsx(models.AbstractModel):
             'wanted_list': order_wl,
             'col_specs': order_template,
         }
-        purchase_params = {
-            'ws_name': 'Purchase Order',
-            'generate_ws_method': '_purchase_report',
-            'title': 'Purchase Order',
-            'wanted_list': order_wl,
-            'col_specs': order_template,
+
+#        purchase_params = {
+#            'ws_name': 'Purchase Order',
+#            'generate_ws_method': '_purchase_report',
+#            'title': 'Purchase Order',
+#            'wanted_list': order_wl,
+#            'col_specs': order_template,
+#        }
+
+        payment_template = {
+            'name': {
+                'header': {
+                    'value': 'Name',
+                },
+                'data': {
+                    'value': self._render("payment.name"),
+                },
+                'width': 20,
+            },
+            'date': {
+                'header': {
+                    'value': 'Date',
+                },
+                'data': {
+                    'value': self._render("payment.payment_date"),
+                },
+                'width': 15,
+            },
+            'journal': {
+                'header': {
+                    'value': 'Journal',
+                },
+                'data': {
+                    'value': self._render("payment.journal_id.name"),
+                },
+                'width': 15,
+            },
+            'amount': {
+                'header': {
+                    'value': 'Amount',
+                },
+                'data': {
+                    'value': self._render("payment.amount"),
+                },
+                'width': 15,
+            },
+            'source': {
+                'header': {
+                    'value': 'Source Order',
+                },
+                'data': {
+                    'value': self._render("payment_origin"),
+                },
+                'width': 20,
+            },
+            'note': {
+                'header': {
+                    'value': 'Note',
+                },
+                'data': {
+                    'value': self._render('payment.communication or ""'),
+                },
+                'width': 20,
+            },
+            'blank': {
+                'data': {
+                    'value': None,
+                },
+            },
+            'total': {
+                'data': {
+                    'type': 'formula',
+                    'value': self._render("total_formula"),
+                    'format': self.format_accounting_fnumb,
+                },
+            },
         }
+        payment_wl = ['name','date','journal','amount','source','note']
         payment_params = {
             'ws_name': 'Payment',
             'generate_ws_method': '_payment_report',
             'title': 'Payment',
-            'wanted_list': order_wl,
-            'col_specs': order_template,
+            'wanted_list': payment_wl,
+            'col_specs': payment_template,
         }
+        debt_template = {
+            'open': {
+                'header': {
+                    'value': 'Opening Debt',
+                },
+                'data': {
+                    'value': self._render("open_formula"),
+                },
+                'width': 20,
+            },
+            'order_sum': {
+                'header': {
+                    'value': 'Orders Sum',
+                },
+                'data': {
+                    'type': 'formula',
+                    'value': '\'{}\'!{}'.format(order_params['ws_name'],self._rowcol_to_cell(3,order_wl.index('total')))
+                },
+                'width': 20,
+            },
+            'payment_sum': {
+                'header': {
+                    'value': 'Payments Sum',
+                },
+                'data': {
+                    'type': 'formula',
+                    'value': '\'{}\'!{}'.format(payment_params['ws_name'],self._rowcol_to_cell(3,payment_wl.index('amount')))
+#                    'value': self._render("payment_formula"),
+                },
+                'width': 20,
+            },
+            'due': {
+                'header': {
+                    'value': 'Amount Due',
+                },
+                'data': {
+                    'type': "formula",
+                    'value': self._render("due_formula"),
+                    'format': self.format_accounting_fnumb,
+                },
+                'width': 20,
+            },
+        }
+        debt_wl = ['open','order_sum','payment_sum','due']
         debt_params = {
             'ws_name': 'Debt Report',
             'generate_ws_method': '_debt_report',
             'title': 'Debt Report',
-            'wanted_list': order_wl,
-            'col_specs': order_template,
+            'wanted_list': debt_wl,
+            'col_specs': debt_template,
         }
 
 #        ws_params1 = {
@@ -119,10 +253,17 @@ class PartnerDebtXlsx(models.AbstractModel):
 #        }
 
 
-        return [debt_params,order_params,payment_params,purchase_params]
+        return [debt_params,order_params,payment_params]
 
     def _debt_report(self, wb, ws, debt_params, data, acd):
 
+        lines = self.env['account.move.line'].search([
+            ('partner_id.id','=',data['form']['partner'][0]),
+            ('journal_id.code','=','DEBT'),
+#            ('payment_date','>=',data['form']['start_date']),
+#            ('payment_date','<=',data['form']['end_date']),
+            ('balance','>',0),
+        ])
         ws.set_portrait()
         ws.fit_to_pages(1,0)
         ws.set_header(self.xls_headers['standard'])
@@ -133,9 +274,36 @@ class PartnerDebtXlsx(models.AbstractModel):
         row_pos = 0
         debt_params['title'] = data['form']['partner'][1]
         row_pos = self._write_ws_title(ws, row_pos, debt_params)
+        wl = debt_params['wanted_list']
+        row_pos = self._write_line(
+            ws, row_pos, debt_params, col_specs_section='header',
+            default_format=self.format_theader_yellow_left)
+        ws.freeze_panes(row_pos, 0)
+
+        open_formula = lines and lines[-1].balance
+        due_formula = '{}+{}-{}'.format(
+            self._rowcol_to_cell(row_pos,wl.index('open')),
+            self._rowcol_to_cell(row_pos,wl.index('order_sum')),
+            self._rowcol_to_cell(row_pos,wl.index('payment_sum'))
+        )
+        self._write_line(
+            ws, row_pos, debt_params, col_specs_section='data',
+                render_space={
+                    'open_formula': open_formula,
+                    'due_formula': due_formula,
+                },
+                default_format=self.format_accounting_numb)
+
 
     def _payment_report(self, wb, ws, payment_params, data, acd):
 
+        payments = self.env['account.payment'].search([
+            ('partner_id.id','=',data['form']['partner'][0]),
+            ('payment_type','=','inbound'),
+            ('payment_date','>=',data['form']['start_date']),
+            ('payment_date','<=',data['form']['end_date']),
+            ('previous_period','=',False),
+        ])
         ws.set_portrait()
         ws.fit_to_pages(1,0)
         ws.set_header(self.xls_headers['standard'])
@@ -145,18 +313,50 @@ class PartnerDebtXlsx(models.AbstractModel):
 
         row_pos = 0
         row_pos = self._write_ws_title(ws, row_pos, payment_params)
+        row_pos = self._write_line(
+            ws, row_pos, payment_params, col_specs_section='header',
+            default_format=self.format_theader_yellow_left)
+        ws.freeze_panes(row_pos, 0)
 
-    def _purchase_report(self, wb, ws, purchase_params, data, acd):
+        wl = payment_params['wanted_list']
 
-        ws.set_portrait()
-        ws.fit_to_pages(1,0)
-        ws.set_header(self.xls_headers['standard'])
-        ws.set_footer(self.xls_footers['standard'])
+        totalwl = ['blank']*3+['total']+['blank']*2
 
-        self._set_column_width(ws, purchase_params)
-
-        row_pos = 0
-        row_pos = self._write_ws_title(ws, row_pos, purchase_params)
+        trow_pos = row_pos
+        row_pos += 1
+        for payment in payments:
+            payment_origin =""
+            for inv in payment.invoice_ids:
+                payment_origin += (str(inv.origin or "") + ";")
+            row_pos = self._write_line(
+                ws, row_pos, payment_params, col_specs_section='data',
+                render_space={
+                    'payment': payment,
+                    'payment_origin' : payment_origin,
+                },
+                default_format=self.format_tcell_left)
+        ftotal_cell = self._rowcol_to_cell(trow_pos+1, wl.index('amount'))
+        ltotal_cell = self._rowcol_to_cell(row_pos, wl.index('amount'))
+        payment_params['wanted_list'] = totalwl
+        total_formula = 'SUM({}:{})'.format(ftotal_cell,ltotal_cell)
+        self._write_line(
+            ws, trow_pos, payment_params, col_specs_section='data',
+                render_space={
+                    'total_formula': total_formula,
+                },
+                default_format=self.format_none_cell)
+#        self.payment_sum_formula = '\'{}\'!{}'.format(payment_params['ws_name'], self._rowcol_to_cell(trow_pos, wl.index('amount')))
+#   def _purchase_report(self, wb, ws, purchase_params, data, acd):
+#
+#        ws.set_portrait()
+#        ws.fit_to_pages(1,0)
+#        ws.set_header(self.xls_headers['standard'])
+#        ws.set_footer(self.xls_footers['standard'])
+#
+#        self._set_column_width(ws, purchase_params)
+#
+#        row_pos = 0
+#        row_pos = self._write_ws_title(ws, row_pos, purchase_params)
 
     def _sale_report(self, wb, ws, order_params, data, acd):
 
@@ -209,15 +409,17 @@ class PartnerDebtXlsx(models.AbstractModel):
                     },
                     default_format=self.format_tcell_left)
         ftotal_cell = self._rowcol_to_cell(trow_pos+1, wl.index('total'))
-        ltotal_cell = self._rowcol_to_cell(row_pos-1, wl.index('total'))
+        ltotal_cell = self._rowcol_to_cell(row_pos, wl.index('total'))
         order_params['wanted_list'] = totalwl
+        order_params['col_specs']['total']['data']['format'] = self.format_accounting_fnumb
         total_formula = 'SUM({}:{})'.format(ftotal_cell,ltotal_cell)
         self._write_line(
             ws, trow_pos, order_params, col_specs_section='data',
                     render_space={
                         'total_formula': total_formula,
                     },
-                    default_format=self.format_tcell_left)
+                    default_format=self.format_none_cell)
+
 #    def _partner_report(self, workbook, ws, ws_params, data, acd):
 
 #        ws.set_portrait()

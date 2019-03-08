@@ -21,6 +21,9 @@
 
     # any module necessary for this one to work correctly
     'depends': [
+        'base',
+        'account',
+        'payment',
         'report_xlsx_helper'
     ],
 
