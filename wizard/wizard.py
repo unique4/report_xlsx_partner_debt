@@ -20,7 +20,7 @@ class PartnerDebt(models.TransientModel):
             'report_type': 'xlsx',
             'report_name': report_name,
             # model name will be used if no report_file passed via context
-            'context': dict(self.env.context, report_file='partner'),
+            'context': dict(self.env.context, report_file=data['form']['partner'][1]),
             # report_xlsx doesn't pass the context if the data dict is empty
             # cf. report_xlsx\static\src\js\report\qwebactionmanager.js
             # TODO: create PR on report_xlsx to fix this
