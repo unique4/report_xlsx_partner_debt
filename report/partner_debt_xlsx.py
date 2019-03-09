@@ -45,7 +45,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                     'value': 'Product',
                 },
                 'data': {
-                    'value': self._render("line.product_id.name"),
+                    'value': self._render("line.product_id.display_name"),
                 },
                 'width': 20,
             },
