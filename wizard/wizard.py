@@ -1,13 +1,18 @@
 from odoo import models, fields, api
+from datetime import datetime
 
 class PartnerDebt(models.TransientModel):
     _name = 'account.debt.report'
 
     partner = fields.Many2one('res.partner',
         string="Partner", required=True)
-    date_range = fields.Many2one('date.range',string="Period")
+    date_range = fields.Many2one('date.range',string="Period", default=lambda self: self._get_default_range())
     start_date = fields.Date(string="From", required=True)
     end_date = fields.Date(string="To", required=True)
+    
+    @api.model
+    def _get_default_range(self):
+        return self.env['date.range'].search([('name'= datetime.today().strftime('%Y-%m'))])[0]
 
     @api.onchange('date_range')
     def _onchange_date_range(self):
