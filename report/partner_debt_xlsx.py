@@ -256,14 +256,40 @@ class PartnerDebtXlsx(models.AbstractModel):
         return [debt_params,order_params,payment_params]
 
     def _debt_report(self, wb, ws, debt_params, data, acd):
-
-        lines = self.env['account.move.line'].search([
+        sd = date.strptime(data['form']['start_date'],'%Y-%m-%d')        
+        #.strftime('%Y-%m-%d')
+        if sd.month < 12:
+            med = (date(sd.year,sd.month+1,1)-timedelta(days=1))
+        else: 
+            med = date(sd.year,12,31)
+        msd = date(med.year,med.month,1)
+        #.strftime('%Y-%m-%d')
+        
+        self.prev_payments = self.env['account.payment'].search([
             ('partner_id.id','=',data['form']['partner'][0]),
-            ('journal_id.code','=','DEBT'),
-#            ('payment_date','>=',data['form']['start_date']),
-#            ('payment_date','<=',data['form']['end_date']),
-            ('balance','>',0),
+            ('payment_type','=','inbound'),
+            ('state','=','posted'),
+            ('payment_date','>=',msd.strftime('%Y-%m-%d')),
+            ('payment_date','<=',med.strftime('%Y-%m-%d')),
+            ('previous_period','=',True),
         ])
+       
+        open_formula = 0
+        while(True):
+            med = msd - timedelta(days=1)
+            msd = date(med.year,med.month,1)
+            lines = self.env['account.move.line'].search([
+                ('partner_id.id','=',data['form']['partner'][0]),
+                ('account_id.internal_type','=','receivable'),
+                ('date','>=',msd.strftime('%Y-%m-%d')),
+                ('date','<=',med.strftime('%Y-%m-%d')),
+            ])
+            bal_sum = sum(lines.balance)
+            if bal_sum == 0: break
+            open_formula += bal_sum
+        
+        open_formula += sum(self.prev_payments.amount)
+        
         ws.set_portrait()
         ws.fit_to_pages(1,0)
         ws.set_header(self.xls_headers['standard'])
@@ -280,7 +306,6 @@ class PartnerDebtXlsx(models.AbstractModel):
             default_format=self.format_theader_yellow_left)
         ws.freeze_panes(row_pos, 0)
 
-        open_formula = lines and lines[-1].balance
         due_formula = '{}+{}-{}'.format(
             self._rowcol_to_cell(row_pos,wl.index('open')),
             self._rowcol_to_cell(row_pos,wl.index('order_sum')),
@@ -297,13 +322,16 @@ class PartnerDebtXlsx(models.AbstractModel):
 
     def _payment_report(self, wb, ws, payment_params, data, acd):
 
-        payments = self.env['account.payment'].search([
+        self.inper_payments = self.env['account.payment'].search([
             ('partner_id.id','=',data['form']['partner'][0]),
             ('payment_type','=','inbound'),
             ('payment_date','>=',data['form']['start_date']),
             ('payment_date','<=',data['form']['end_date']),
-            ('previous_period','=',False),
+#            ('previous_period','=',False),
         ])
+        
+        payments = [payment for payment in self.inper_payments if payment not in self.prev_payments]
+        
         ws.set_portrait()
         ws.fit_to_pages(1,0)
         ws.set_header(self.xls_headers['standard'])
