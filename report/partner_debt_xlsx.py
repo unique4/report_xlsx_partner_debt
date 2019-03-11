@@ -285,11 +285,11 @@ class PartnerDebtXlsx(models.AbstractModel):
                 ('date','>=',msd.strftime('%Y-%m-%d')),
                 ('date','<=',med.strftime('%Y-%m-%d')),
             ])
-            bal_sum = sum(lines.balance)
+            bal_sum = sum([line.balance for line in lines])
             if bal_sum == 0: break
             open_formula += bal_sum
         
-        open_formula += sum(self.prev_payments.amount)
+        open_formula += sum([payment.amount for payment in self.prev_payments])
         
         ws.set_portrait()
         ws.fit_to_pages(1,0)
