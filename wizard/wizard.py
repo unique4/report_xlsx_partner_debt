@@ -12,7 +12,7 @@ class PartnerDebt(models.TransientModel):
     
     @api.model
     def _get_default_range(self):
-        return self.env['date.range'].search([('name'= datetime.today().strftime('%Y-%m'))])[0]
+        return self.env['date.range'].search([('name','=', datetime.today().strftime('%Y-%m'))])[0]
 
     @api.onchange('date_range')
     def _onchange_date_range(self):
