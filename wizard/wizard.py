@@ -5,8 +5,15 @@ class PartnerDebt(models.TransientModel):
 
     partner = fields.Many2one('res.partner',
         string="Partner", required=True)
-    start_date = fields.Date(string="From")
-    end_date = fields.Date(strinh="To")
+    date_range = fields.Many2one('date.range',string="Period")
+    start_date = fields.Date(string="From", required=True)
+    end_date = fields.Date(string="To", required=True)
+
+    @api.onchange('date_range')
+    def _onchange_date_range(self):
+        self.start_date = self.date_range.date_start
+        self.end_date = self.date_range.date_end
+
 
     @api.multi
     def export_xlsx(self):
