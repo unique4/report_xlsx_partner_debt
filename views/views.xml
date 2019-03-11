@@ -7,6 +7,7 @@
                 <form string="Export Debt">
                     <group>
                         <field name="partner"/>
+                        <field name="date_range" domain = "[('type_id.name','=','months')]" />
                         <field name="start_date" autocomplete="off"/>
                         <field name="end_date" autocomplete="off"/>
                     </group>
