@@ -285,6 +285,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                 ('date','>=',msd.strftime('%Y-%m-%d')),
                 ('date','<=',med.strftime('%Y-%m-%d')),
             ])
+            if not lines: continue
             bal_sum = sum([line.balance for line in lines])
             if bal_sum == 0: break
             open_formula += bal_sum
