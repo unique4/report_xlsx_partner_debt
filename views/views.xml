@@ -25,7 +25,7 @@
                     res_model="account.debt.report"
                     view_mode="form"
                     target="new"
-                    context = "{'date_range' : context_today().strftime('%Y-%m')}"
+                    context = "{'default_date_range' : context_today().strftime('%Y-%m')}"
                     key2="client_action_multi"/>
         <menuitem name="Partner Debt" id="report_xlsx_partner_debt" parent="account.menu_finance_reports"
               action="report_xlsx_partner_debt.action_window"/>
