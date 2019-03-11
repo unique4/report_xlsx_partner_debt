@@ -3,7 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 
 
 class PartnerDebtXlsx(models.AbstractModel):
@@ -257,7 +257,7 @@ class PartnerDebtXlsx(models.AbstractModel):
         return [debt_params,order_params,payment_params]
 
     def _debt_report(self, wb, ws, debt_params, data, acd):
-        sd = date.strptime(data['form']['start_date'],'%Y-%m-%d')        
+        sd = datetime.strptime(data['form']['start_date'],'%Y-%m-%d').date()        
         #.strftime('%Y-%m-%d')
         if sd.month < 12:
             med = (date(sd.year,sd.month+1,1)-timedelta(days=1))
