@@ -274,22 +274,16 @@ class PartnerDebtXlsx(models.AbstractModel):
             ('payment_date','<=',med.strftime('%Y-%m-%d')),
             ('previous_period','=',True),
         ])
-       
-        open_formula = 0
-        while(True):
-            med = msd - timedelta(days=1)
-            msd = date(med.year,med.month,1)
-            lines = self.env['account.move.line'].search([
-                ('partner_id.id','=',data['form']['partner'][0]),
-                ('account_id.internal_type','=','receivable'),
-                ('date','>=',msd.strftime('%Y-%m-%d')),
-                ('date','<=',med.strftime('%Y-%m-%d')),
-            ])
-            if not lines: continue
-            bal_sum = sum([line.balance for line in lines])
-            if bal_sum == 0: break
-            open_formula += bal_sum
-        
+      
+        med = msd - timedelta(days=1)
+        msd = date(med.year,med.month,1)
+        lines = self.env['account.move.line'].search([
+            ('partner_id.id','=',data['form']['partner'][0]),
+            ('account_id.internal_type','=','receivable'),
+        #    ('date','>=',msd.strftime('%Y-%m-%d')),
+            ('date','<=',med.strftime('%Y-%m-%d')),
+        ])
+        open_formula = sum([line.balance for line in lines])
         open_formula += sum([payment.amount for payment in self.prev_payments])
         
         ws.set_portrait()
