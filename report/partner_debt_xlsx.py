@@ -323,6 +323,7 @@ class PartnerDebtXlsx(models.AbstractModel):
             ('payment_type','=','inbound'),
             ('payment_date','>=',data['form']['start_date']),
             ('payment_date','<=',data['form']['end_date']),
+            ('state','=','posted'),
 #            ('previous_period','=',False),
         ])
         
