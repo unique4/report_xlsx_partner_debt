@@ -27,7 +27,7 @@ class PartnerDebt(models.TransientModel):
         data = {}
         data['form'] = self.read(['partner', 'start_date', 'end_date'])[0]
         data['dynamic_report'] = True
-        file_name = data['form']['partner'][1]).strip()
+        file_name = data['form']['partner'][1].strip()
         file_name += " - "
         file_name += data['form']['start_date'].replace("-","")
         file_name += " - "
