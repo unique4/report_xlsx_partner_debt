@@ -151,6 +151,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                 },
                 'data': {
                     'value': self._render("payment.amount"),
+                    'format': self.format_accounting_numb,                    
                 },
                 'width': 15,
             },
