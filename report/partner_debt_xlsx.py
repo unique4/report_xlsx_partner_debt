@@ -297,6 +297,8 @@ class PartnerDebtXlsx(models.AbstractModel):
         row_pos = 0
         debt_params['title'] = data['form']['partner'][1]
         row_pos = self._write_ws_title(ws, row_pos, debt_params)
+        ws.write(0,2,data['form']['start_date'])
+        ws.write(0,3,data['form']['end_date'])
         wl = debt_params['wanted_list']
         row_pos = self._write_line(
             ws, row_pos, debt_params, col_specs_section='header',
