@@ -1,6 +1,5 @@
 from odoo import models, fields, api
 from datetime import datetime
-from unidecode import unidecode
 
 class PartnerDebt(models.TransientModel):
     _name = 'account.debt.report'
@@ -28,12 +27,17 @@ class PartnerDebt(models.TransientModel):
         data = {}
         data['form'] = self.read(['partner', 'start_date', 'end_date'])[0]
         data['dynamic_report'] = True
+        file_name = data['form']['partner'][1]).strip()
+        file_name += " - "
+        file_name += data['form']['start_date'].replace("-","")
+        file_name += " - "
+        file_name += data['form']['end_date'].replace("-","")        
         report = {
             'type': 'ir.actions.report',
             'report_type': 'xlsx',
             'report_name': report_name,
             # model name will be used if no report_file passed via context
-            'context': dict(self.env.context, report_file=unidecode(data['form']['partner'][1])),
+            'context': dict(self.env.context, report_file=file_name),
             # report_xlsx doesn't pass the context if the data dict is empty
             # cf. report_xlsx\static\src\js\report\qwebactionmanager.js
             # TODO: create PR on report_xlsx to fix this
