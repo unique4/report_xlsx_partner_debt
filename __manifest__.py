@@ -24,6 +24,7 @@
         'base',
         'account',
         'payment',
+        'date_range',
         'report_xlsx_helper'
     ],
 

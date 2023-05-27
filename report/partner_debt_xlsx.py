@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models
+from datetime import datetime, date, timedelta
 
 
 class PartnerDebtXlsx(models.AbstractModel):
@@ -45,7 +46,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                     'value': 'Product',
                 },
                 'data': {
-                    'value': self._render("line.product_id.name"),
+                    'value': self._render("line.product_id.display_name"),
                 },
                 'width': 20,
             },
@@ -150,6 +151,7 @@ class PartnerDebtXlsx(models.AbstractModel):
                 },
                 'data': {
                     'value': self._render("payment.amount"),
+                    'format': self.format_accounting_numb,                    
                 },
                 'width': 15,
             },
@@ -256,14 +258,35 @@ class PartnerDebtXlsx(models.AbstractModel):
         return [debt_params,order_params,payment_params]
 
     def _debt_report(self, wb, ws, debt_params, data, acd):
-
+        sd = datetime.strptime(data['form']['start_date'],'%Y-%m-%d').date()        
+        #.strftime('%Y-%m-%d')
+        if sd.month < 12:
+            med = (date(sd.year,sd.month+1,1)-timedelta(days=1))
+        else: 
+            med = date(sd.year,12,31)
+        msd = date(med.year,med.month,1)
+        #.strftime('%Y-%m-%d')
+        
+        self.prev_payments = self.env['account.payment'].search([
+            ('partner_id.id','=',data['form']['partner'][0]),
+            ('payment_type','=','inbound'),
+            ('state','=','posted'),
+            ('payment_date','>=',msd.strftime('%Y-%m-%d')),
+            ('payment_date','<=',med.strftime('%Y-%m-%d')),
+            ('previous_period','=',True),
+        ])
+      
+        med = msd - timedelta(days=1)
+        msd = date(med.year,med.month,1)
         lines = self.env['account.move.line'].search([
             ('partner_id.id','=',data['form']['partner'][0]),
-            ('journal_id.code','=','DEBT'),
-#            ('payment_date','>=',data['form']['start_date']),
-#            ('payment_date','<=',data['form']['end_date']),
-            ('balance','>',0),
+            ('account_id.internal_type','=','receivable'),
+        #    ('date','>=',msd.strftime('%Y-%m-%d')),
+            ('date','<=',med.strftime('%Y-%m-%d')),
         ])
+        open_formula = sum([line.balance for line in lines])
+        open_formula += sum([payment.amount for payment in self.prev_payments])
+        
         ws.set_portrait()
         ws.fit_to_pages(1,0)
         ws.set_header(self.xls_headers['standard'])
@@ -274,13 +297,14 @@ class PartnerDebtXlsx(models.AbstractModel):
         row_pos = 0
         debt_params['title'] = data['form']['partner'][1]
         row_pos = self._write_ws_title(ws, row_pos, debt_params)
+        ws.write(0,2,data['form']['start_date'])
+        ws.write(0,3,data['form']['end_date'])
         wl = debt_params['wanted_list']
         row_pos = self._write_line(
             ws, row_pos, debt_params, col_specs_section='header',
             default_format=self.format_theader_yellow_left)
         ws.freeze_panes(row_pos, 0)
 
-        open_formula = lines and lines[-1].balance
         due_formula = '{}+{}-{}'.format(
             self._rowcol_to_cell(row_pos,wl.index('open')),
             self._rowcol_to_cell(row_pos,wl.index('order_sum')),
@@ -297,13 +321,17 @@ class PartnerDebtXlsx(models.AbstractModel):
 
     def _payment_report(self, wb, ws, payment_params, data, acd):
 
-        payments = self.env['account.payment'].search([
+        self.inper_payments = self.env['account.payment'].search([
             ('partner_id.id','=',data['form']['partner'][0]),
             ('payment_type','=','inbound'),
             ('payment_date','>=',data['form']['start_date']),
             ('payment_date','<=',data['form']['end_date']),
-            ('previous_period','=',False),
+            ('state','=','posted'),
+#            ('previous_period','=',False),
         ])
+        
+        payments = [payment for payment in self.inper_payments if payment not in self.prev_payments]
+        
         ws.set_portrait()
         ws.fit_to_pages(1,0)
         ws.set_header(self.xls_headers['standard'])
