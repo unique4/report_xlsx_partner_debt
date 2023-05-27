@@ -1,5 +1,5 @@
+<?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-  <data>
         <record model="ir.ui.view" id="report_xlsx_partner_debt.wizard">
             <field name="name">report_xlsx_partner_debt wizard </field>
             <field name="model">account.debt.report</field>
@@ -10,11 +10,10 @@
                         <field name="start_date" autocomplete="off"/>
                         <field name="end_date" autocomplete="off"/>
                     </group>
-            <footer>
-                <button name="export_xlsx" string="Print" type="object"  class="oe_highlight"  />
-                or
-                <button string="Cancel" class="oe_link" special="cancel" />
-            </footer>
+            	    <footer>
+                	<button name="export_xlsx" string="Print" type="object"  class="oe_highlight"  />
+                	<button string="Cancel" class="oe_link" special="cancel" />
+                    </footer>
                 </form>
             </field>
         </record>
@@ -38,62 +37,4 @@
                 </xpath>
             </field>
         </record>
-
-    <!-- explicit list view definition -->
-    <!--
-    <record model="ir.ui.view" id="report_xlsx_partner_debt.list">
-      <field name="name">report_xlsx_partner_debt list</field>
-      <field name="model">report_xlsx_partner_debt.report_xlsx_partner_debt</field>
-      <field name="arch" type="xml">
-        <tree>
-          <field name="name"/>
-          <field name="value"/>
-          <field name="value2"/>
-        </tree>
-      </field>
-    </record>
-    -->
-
-    <!-- actions opening views on models -->
-    <!--
-    <record model="ir.actions.act_window" id="report_xlsx_partner_debt.action_window">
-      <field name="name">report_xlsx_partner_debt window</field>
-      <field name="res_model">report_xlsx_partner_debt.report_xlsx_partner_debt</field>
-      <field name="view_mode">tree,form</field>
-    </record>
-    -->
-
-    <!-- server action to the one above -->
-    <!--
-    <record model="ir.actions.server" id="report_xlsx_partner_debt.action_server">
-      <field name="name">report_xlsx_partner_debt server</field>
-      <field name="model_id" ref="model_report_xlsx_partner_debt_report_xlsx_partner_debt"/>
-      <field name="state">code</field>
-      <field name="code">
-        action = {
-          "type": "ir.actions.act_window",
-          "view_mode": "tree,form",
-          "res_model": self._name,
-        }
-      </field>
-    </record>
-    -->
-
-    <!-- Top menu item -->
-    <!--
-    <menuitem name="report_xlsx_partner_debt" id="report_xlsx_partner_debt.menu_root"/>
-    -->
-    <!-- menu categories -->
-    <!--
-    <menuitem name="Menu 1" id="report_xlsx_partner_debt.menu_1" parent="report_xlsx_partner_debt.menu_root"/>
-    <menuitem name="Menu 2" id="report_xlsx_partner_debt.menu_2" parent="report_xlsx_partner_debt.menu_root"/>
-    -->
-    <!-- actions -->
-    <!--
-    <menuitem name="List" id="report_xlsx_partner_debt.menu_1_list" parent="report_xlsx_partner_debt.menu_1"
-              action="report_xlsx_partner_debt.action_window"/>
-    <menuitem name="Server to list" id="report_xlsx_partner_debt" parent="report_xlsx_partner_debt.menu_2"
-              action="report_xlsx_partner_debt.action_server"/>
-    -->
-  </data>
 </odoo>

@@ -361,8 +361,7 @@ class PartnerDebtXlsx(models.AbstractModel):
     def _sale_report(self, wb, ws, order_params, data, acd):
 
 #        partner = env['res.partner'].browse(data['form']['partner'][0])
-        orders = self.env['sale.order'].search([('confirmation_date','>=',data['form']['start_date']),('confirmation_date','<=',data['form']['end_date']),
-            ('partner_id.id','=',data['form']['partner'][0])])
+        orders = self.env['sale.order'].search([('confirmation_date','>=',data['form']['start_date']),('confirmation_date','<=',data['form']['end_date']),('partner_id.id','=',data['form']['partner'][0]),('|',('state','=','sale'),('state','=','done'))])
 
         ws.set_portrait()
         ws.fit_to_pages(1,0)

@@ -8,7 +8,7 @@ class PartnerDebt(models.TransientModel):
     start_date = fields.Date(string="From")
     end_date = fields.Date(strinh="To")
 
-    @api.multi
+    
     def export_xlsx(self):
         module = __name__.split('addons.')[1].split('.')[0]
         report_name = '{}.partner_debt_xlsx'.format(module)
